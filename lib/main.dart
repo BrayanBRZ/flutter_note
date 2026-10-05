@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:meu_app/shared/appearance.dart';
 import 'package:meu_app/shared/app_theme.dart';
 import 'package:meu_app/screens/add_subject_screen.dart';
+import 'package:meu_app/screens/backup_screen.dart';
 import 'package:meu_app/screens/confirm_action_screen.dart';
 import 'package:meu_app/screens/create_task_screen.dart';
 import 'package:meu_app/screens/edit_task_screen.dart';
@@ -53,6 +54,7 @@ class SchoolDiaryApp extends StatelessWidget {
             '/subject': (context) => const SubjectScreen(),
             '/subject/add': (context) => const AddSubjectScreen(),
             '/setting': (context) => const SettingScreen(),
+            '/backup': (context) => const BackupScreen(),
             '/tags': (context) => const TagsScreen(),
             '/tags/form': (context) => const TagFormScreen(),
             '/task/create': (context) => const CreateTaskScreen(),

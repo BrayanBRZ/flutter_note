@@ -122,6 +122,14 @@ class SettingScreen extends StatelessWidget {
                           ),
                           const Divider(indent: 16, endIndent: 16),
                           _Tile(
+                            icon: Icons.cloud_sync_outlined,
+                            label: 'Backup',
+                            subtitle: 'Salve ou restaure sua agenda na nuvem',
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/backup'),
+                          ),
+                          const Divider(indent: 16, endIndent: 16),
+                          _Tile(
                             icon: Icons.bar_chart_rounded,
                             label: 'Estatísticas',
                             subtitle: 'Resumo das suas atividades',
