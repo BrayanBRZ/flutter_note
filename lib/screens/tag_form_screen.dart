@@ -3,20 +3,24 @@ import 'package:meu_app/data/enums/regularity.dart';
 import 'package:meu_app/data/models/reminder.dart';
 import 'package:meu_app/data/models/tag.dart';
 import 'package:meu_app/services/tag_service.dart';
-import 'package:meu_app/shared/formatters.dart';
+import 'package:meu_app/shared/widgets/reminder_fields.dart';
 import 'package:meu_app/shared/widgets/bottom_nav.dart';
-import 'package:meu_app/shared/widgets/floating_card.dart';
+import 'package:meu_app/shared/widgets/form_surface.dart';
+import 'package:meu_app/shared/widgets/action_button.dart';
+import 'package:meu_app/shared/widgets/app_scaffold.dart';
 import 'package:meu_app/shared/widgets/top_bar.dart';
+import 'package:meu_app/shared/widgets/tag_indicator.dart';
 
 class TagFormScreen extends StatefulWidget {
-  const TagFormScreen({super.key});
+  const TagFormScreen({super.key, this.tagService});
+  final TagService? tagService;
 
   @override
   State<TagFormScreen> createState() => _TagFormScreenState();
 }
 
 class _TagFormScreenState extends State<TagFormScreen> {
-  final _tagService = TagService();
+  late final _tagService = widget.tagService ?? TagService();
   final _titleController = TextEditingController();
   final _colors = const [
     Colors.white,
@@ -81,9 +85,9 @@ class _TagFormScreenState extends State<TagFormScreen> {
 
   Future<void> _submit() async {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe o nome da tag.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Informe o nome da tag.')));
       return;
     }
 
@@ -107,7 +111,7 @@ class _TagFormScreenState extends State<TagFormScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nao foi possivel salvar a tag.')),
+        const SnackBar(content: Text('Não foi possível salvar a tag.')),
       );
     }
   }
@@ -115,7 +119,13 @@ class _TagFormScreenState extends State<TagFormScreen> {
   Reminder _buildReminder() {
     return Reminder(
       regularity: _reminderRegularity,
-      regularTime: DateTime(1970, 1, 1, _reminderTime.hour, _reminderTime.minute),
+      regularTime: DateTime(
+        1970,
+        1,
+        1,
+        _reminderTime.hour,
+        _reminderTime.minute,
+      ),
       remindBefore: Duration(minutes: _remindBeforeMinutes),
       isActive: _reminderActive,
     );
@@ -123,18 +133,30 @@ class _TagFormScreenState extends State<TagFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    return AppScaffold(
       body: SafeArea(
         child: Column(
           children: [
-            TopBar(screenName: _tag == null ? 'Criar Tag' : 'Editar Tag'),
+            TopBar(
+              screenName: _tag == null ? 'Criar Tag' : 'Editar Tag',
+              showBackButton: true,
+            ),
             Expanded(
               child: FutureBuilder<void>(
                 future: _future,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState != ConnectionState.done) {
                     return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: FilledButton(
+                        onPressed: () => setState(() {
+                          _future = _loadReminder();
+                        }),
+                        child: const Text('Tentar carregar novamente'),
+                      ),
+                    );
                   }
                   return _buildForm();
                 },
@@ -147,140 +169,150 @@ class _TagFormScreenState extends State<TagFormScreen> {
     );
   }
 
-  Widget _buildForm() {
-    final w = MediaQuery.of(context).size.width;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _label('Nome'),
-          FloatingCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: 'Ex: Seminario',
-                border: InputBorder.none,
+  Widget _buildForm() => SingleChildScrollView(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FormSection(
+          title: 'Identidade da tag',
+          subtitle: 'Escolha como ela aparece na sua agenda.',
+          icon: Icons.label_outline_rounded,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FormTextField(
+                label: 'Nome',
+                hint: 'Ex.: Seminário',
+                controller: _titleController,
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _label('Cor'),
-          Wrap(
-            spacing: 10,
-            children: _colors.map((color) {
-              final selected = color.toARGB32() == _selectedColor.toARGB32();
-              return GestureDetector(
-                onTap: () => setState(() => _selectedColor = color),
-                child: CircleAvatar(
-                  backgroundColor: color,
-                  child: selected ? const Icon(Icons.check) : null,
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-          _label('Lembrete da Tag'),
-          FloatingCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Column(
-              children: [
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Ativo'),
-                  value: _reminderActive,
-                  onChanged: (value) => setState(() => _reminderActive = value),
-                ),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<Regularity>(
-                    value: _reminderRegularity,
-                    isExpanded: true,
-                    items: Regularity.values
-                        .map(
-                          (regularity) => DropdownMenuItem(
-                            value: regularity,
-                            child: Text(regularityLabel(regularity)),
+              const SizedBox(height: 16),
+              const FieldLabel('Cor na agenda'),
+              const SizedBox(height: 8),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 328 ? 6 : 3;
+                  final slotWidth =
+                      (constraints.maxWidth - 8 * (columns - 1)) / columns;
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _colors.map((color) {
+                      final selected =
+                          color.toARGB32() == _selectedColor.toARGB32();
+                      return SizedBox(
+                        width: slotWidth,
+                        child: Center(
+                          child: Semantics(
+                            selected: selected,
+                            label:
+                                'Cor da tag: ${['Branco', 'Vermelho', 'Laranja', 'Verde', 'Azul', 'Roxo'][_colors.indexOf(color)]}',
+                            child: IconButton(
+                              onPressed: () =>
+                                  setState(() => _selectedColor = color),
+                              style: IconButton.styleFrom(
+                                minimumSize: const Size(48, 48),
+                                shape: const CircleBorder(),
+                                backgroundColor: selected
+                                    ? Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer
+                                    : Colors.transparent,
+                                side: BorderSide(
+                                  color: selected
+                                      ? Theme.of(context).colorScheme.onSurface
+                                      : Colors.transparent,
+                                  width: 1.5,
+                                ),
+                              ),
+                              icon: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  TagIndicator(color: color, size: 24),
+                                  if (selected)
+                                    Icon(
+                                      Icons.check_rounded,
+                                      size: 16,
+                                      color: color.computeLuminance() > .5
+                                          ? Colors.black
+                                          : Colors.white,
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _reminderRegularity = value);
-                      }
-                    },
-                  ),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Horario'),
-                  trailing: Text(_reminderTime.format(context)),
-                  onTap: _pickReminderTime,
-                ),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: _remindBeforeMinutes,
-                    isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(value: 10, child: Text('10 min antes')),
-                      DropdownMenuItem(value: 30, child: Text('30 min antes')),
-                      DropdownMenuItem(value: 60, child: Text('1 hora antes')),
-                      DropdownMenuItem(value: 1440, child: Text('1 dia antes')),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _remindBeforeMinutes = value);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          GestureDetector(
-            onTap: _submit,
-            child: Container(
-              width: double.infinity,
-              height: w * 0.16,
-              decoration: BoxDecoration(
-                color: const Color(0xFF9C27B0),
-                borderRadius: BorderRadius.circular(20),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_rounded, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text(
-                    'Salvar Tag',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+              const SizedBox(height: 16),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _titleController,
+                builder: (context, value, _) => Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest.withValues(alpha: .3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
                     ),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      TagIndicator(color: _selectedColor, size: 16),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          value.text.trim().isEmpty
+                              ? 'Sua tag'
+                              : value.text.trim(),
+                          style: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Prévia',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _label(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 6),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
-          color: Colors.black54,
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 16),
+        FormSection(
+          title: 'Lembrete da tag',
+          subtitle: 'Ajustes usados pelas atividades com esta tag.',
+          icon: Icons.notifications_none_rounded,
+          child: ReminderFields(
+            active: _reminderActive,
+            regularity: _reminderRegularity,
+            time: _reminderTime,
+            beforeMinutes: _remindBeforeMinutes,
+            onActiveChanged: (value) => setState(() => _reminderActive = value),
+            onRegularityChanged: (value) {
+              if (value != null) setState(() => _reminderRegularity = value);
+            },
+            onTimeTap: _pickReminderTime,
+            onBeforeChanged: (value) {
+              if (value != null) setState(() => _remindBeforeMinutes = value);
+            },
+          ),
+        ),
+        const SizedBox(height: 24),
+        ActionButton(
+          label: 'Salvar tag',
+          icon: Icons.check_rounded,
+          onPressed: _submit,
+        ),
+      ],
+    ),
+  );
 }

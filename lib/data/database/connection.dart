@@ -40,7 +40,7 @@ class Connection {
       version: _databaseVersion,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
-      onOpen: _ensureInitialData,
+      onOpen: _unlockDefaultTags,
     );
   }
 
@@ -67,8 +67,8 @@ class Connection {
     }
   }
 
-  Future<void> _ensureInitialData(Database db) async {
-    for (final sql in Seeders.initialInserts) {
+  Future<void> _unlockDefaultTags(Database db) async {
+    for (final sql in Schema.unlockDefaultTags) {
       await db.execute(sql);
     }
   }

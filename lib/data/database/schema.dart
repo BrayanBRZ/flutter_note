@@ -46,22 +46,6 @@ class Schema {
 
   static const List<String> createTriggers = [
     '''
-      CREATE TRIGGER prevent_default_tag_update
-      BEFORE UPDATE ON tag
-      WHEN OLD.is_default = 1
-      BEGIN
-        SELECT RAISE(ABORT, 'default tags cannot be updated');
-      END
-    ''',
-    '''
-      CREATE TRIGGER prevent_default_tag_delete
-      BEFORE DELETE ON tag
-      WHEN OLD.is_default = 1
-      BEGIN
-        SELECT RAISE(ABORT, 'default tags cannot be deleted');
-      END
-    ''',
-    '''
       CREATE TRIGGER prevent_tag_reminder_update
       BEFORE UPDATE OF reminder_id ON tag
       WHEN OLD.reminder_id != NEW.reminder_id
@@ -76,5 +60,11 @@ class Schema {
         DELETE FROM reminder WHERE id = OLD.reminder_id;
       END
     ''',
+  ];
+
+  // Existing installations retain the original protection triggers.
+  static const List<String> unlockDefaultTags = [
+    'DROP TRIGGER IF EXISTS prevent_default_tag_update',
+    'DROP TRIGGER IF EXISTS prevent_default_tag_delete',
   ];
 }

@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 class ReminderDao {
   ReminderDao(this._database);
 
-  final Database _database;
+  final DatabaseExecutor _database;
 
   static const String _table = 'reminder';
 

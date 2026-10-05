@@ -30,6 +30,4 @@ class Tag {
     if (reminderId != null) 'reminder_id': reminderId,
     'is_default': isDefault ? 1 : 0,
   };
-
-  bool get isEditable => !isDefault;
 }

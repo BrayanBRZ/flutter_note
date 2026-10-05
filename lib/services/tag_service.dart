@@ -3,27 +3,34 @@ import 'package:meu_app/data/dao/tag_dao.dart';
 import 'package:meu_app/data/database/connection.dart';
 import 'package:meu_app/data/models/reminder.dart';
 import 'package:meu_app/data/models/tag.dart';
+import 'package:sqflite/sqflite.dart';
 
 class TagService {
+  TagService({Database? database}) : _database = database;
+
+  final Database? _database;
+  Future<Database> get _connection async =>
+      _database ?? await Connection.instance.database;
+
   Future<List<Tag>> findAll() async {
-    final database = await Connection.instance.database;
+    final database = await _connection;
     return TagDao(database).findAll();
   }
 
   Future<Tag?> findById(int id) async {
-    final database = await Connection.instance.database;
+    final database = await _connection;
     return TagDao(database).findById(id);
   }
 
   Future<Reminder?> findReminder(Tag tag) async {
-    final database = await Connection.instance.database;
+    final database = await _connection;
     final reminderId = tag.reminderId;
     if (reminderId == null) return null;
     return ReminderDao(database).findById(reminderId);
   }
 
   Future<int> create(Tag tag, Reminder reminder) async {
-    final database = await Connection.instance.database;
+    final database = await _connection;
     final reminderDao = ReminderDao(database);
     final tagDao = TagDao(database);
 
@@ -37,27 +44,25 @@ class TagService {
   }
 
   Future<void> update(Tag tag, Reminder reminder) async {
-    if (!tag.isEditable) {
-      throw StateError('Default tags cannot be updated');
-    }
-
-    final database = await Connection.instance.database;
+    final database = await _connection;
     final reminderId = tag.reminderId;
     if (reminderId == null) {
       throw ArgumentError.value(tag, 'tag', 'reminderId is required');
     }
 
-    await ReminderDao(database).update(_reminderWithId(reminder, reminderId));
-    await TagDao(database).update(tag);
+    await database.transaction((transaction) async {
+      await TagDao(transaction).update(tag);
+      await ReminderDao(
+        transaction,
+      ).update(_reminderWithId(reminder, reminderId));
+    });
   }
 
   Future<void> delete(Tag tag) async {
-    if (!tag.isEditable) {
-      throw StateError('Default tags cannot be deleted');
-    }
-
-    final database = await Connection.instance.database;
-    await TagDao(database).delete(tag.id!);
+    final database = await _connection;
+    await database.transaction(
+      (transaction) => TagDao(transaction).delete(tag.id!),
+    );
   }
 
   Tag _tagWithReminder(Tag tag, int reminderId) {
