@@ -1,5 +1,13 @@
 # Configuração do Ambiente Flutter
 
+## Backup manual com Firebase
+
+Em **Configurações → Backup**, a agenda pode ser salva ou restaurada manualmente.
+O envio substitui o retrato da conta no Firestore; a restauração substitui o
+SQLite local após um modal de confirmação. O retrato inclui atividades, matérias,
+tags e lembretes. Veja [configuração e funcionamento](docs/backup.md) para conectar
+o projeto `agenda-escolar-1bae1` em Android e web e habilitar o acesso por e-mail/senha.
+
 ## Interface e aparência
 
 A Agenda Escolar usa um tema central com quatro combinações: padrão e
