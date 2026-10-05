@@ -11,7 +11,7 @@ String regularityLabel(Regularity regularity) {
     case Regularity.single:
       return 'Uma vez';
     case Regularity.daily:
-      return 'Diaria';
+      return 'Diária';
     case Regularity.weekly:
       return 'Semanal';
     case Regularity.monthly:

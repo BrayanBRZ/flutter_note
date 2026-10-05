@@ -2,91 +2,81 @@ import 'package:flutter/material.dart';
 import 'package:meu_app/shared/widgets/floating_card.dart';
 
 class BottomNav extends StatelessWidget {
-  final int? currentIndex;
-
   const BottomNav({super.key, required this.currentIndex});
+  final int? currentIndex;
+  static const _routes = ['/home', '/history', '/subject', '/setting'];
+  static const _labels = ['Início', 'Atividades', 'Matérias', 'Configurações'];
+  static const _icons = [
+    Icons.home_rounded,
+    Icons.history_rounded,
+    Icons.menu_book_rounded,
+    Icons.settings_rounded,
+  ];
 
-  void _onItemTapped(BuildContext context, int index) {
-    if (index == currentIndex) return;
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 1:
-        Navigator.pushReplacementNamed(context, '/history');
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(context, '/subject');
-        break;
-      case 3:
-        Navigator.pushReplacementNamed(context, '/setting');
-        break;
-      case 4:
-        Navigator.pushReplacementNamed(context, '/task/create');
-        break;
+  void _navigate(BuildContext context, int index) {
+    if (index != currentIndex) {
+      Navigator.pushReplacementNamed(context, _routes[index]);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FloatingCard(
-              height: MediaQuery.of(context).size.width * 0.16,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavItem(context, Icons.home_rounded, 0),
-                  _buildNavItem(context, Icons.history_rounded, 1),
-                  GestureDetector(
-                    onTap: () => _onItemTapped(context, 4),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
-                        color: Colors.purple,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple,
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.assignment_add,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: FloatingCard(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
+            children: [
+              for (final index in [0, 1]) _item(context, index),
+              Expanded(
+                child: Center(
+                  heightFactor: 1,
+                  child: IconButton.filled(
+                    tooltip: 'Criar atividade',
+                    style: IconButton.styleFrom(
+                      backgroundColor: scheme.primary,
+                      foregroundColor: scheme.onPrimary,
                     ),
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/task/create'),
+                    icon: const Icon(Icons.add_rounded, size: 28),
                   ),
-                  _buildNavItem(context, Icons.menu_book_rounded, 2),
-                  _buildNavItem(context, Icons.settings_rounded, 3),
-                ],
+                ),
               ),
-            ),
-          ],
+              for (final index in [2, 3]) _item(context, index),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(BuildContext context, IconData icon, int index) {
-    final isSelected = currentIndex == index;
-
-    return IconButton(
-      icon: Icon(
-        icon,
-        color: isSelected ? const Color(0xFF9C27B0) : Colors.black45,
-        size: 28,
+  Widget _item(BuildContext context, int index) {
+    final scheme = Theme.of(context).colorScheme;
+    final selected = currentIndex == index;
+    return Expanded(
+      child: Center(
+        heightFactor: 1,
+        child: Semantics(
+          selected: selected,
+          child: IconButton(
+            tooltip: _labels[index],
+            style: IconButton.styleFrom(
+              backgroundColor: selected
+                  ? scheme.primaryContainer
+                  : Colors.transparent,
+              foregroundColor: selected
+                  ? scheme.onPrimaryContainer
+                  : scheme.onSurfaceVariant,
+            ),
+            onPressed: () => _navigate(context, index),
+            icon: Icon(_icons[index]),
+          ),
+        ),
       ),
-      onPressed: () => _onItemTapped(context, index),
     );
   }
 }

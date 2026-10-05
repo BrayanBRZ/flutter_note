@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:meu_app/shared/appearance.dart';
+import 'package:meu_app/shared/widgets/app_scaffold.dart';
 import 'package:meu_app/shared/widgets/bottom_nav.dart';
 import 'package:meu_app/shared/widgets/floating_card.dart';
 import 'package:meu_app/shared/widgets/top_bar.dart';
@@ -8,32 +10,107 @@ class SettingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    final appearance = AppearanceScope.of(context);
+    final vertical = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    return AppScaffold(
       body: SafeArea(
         child: Column(
           children: [
-            const TopBar(screenName: 'Configuracoes'),
+            const TopBar(screenName: 'Configurações'),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(left: 4, top: 20, bottom: 8),
-                      child: Text(
-                        'Organizacao',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: Colors.black54,
-                        ),
+                    Text(
+                      'Sua aparência',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Escolha o visual que combina com a sua rotina.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 16),
+                    FloatingCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Paleta',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          SegmentedButton<AppPalette>(
+                            direction: vertical
+                                ? Axis.vertical
+                                : Axis.horizontal,
+                            expandedInsets: vertical ? null : EdgeInsets.zero,
+                            showSelectedIcon: false,
+                            segments: const [
+                              ButtonSegment(
+                                value: AppPalette.standard,
+                                label: Text('Padrão'),
+                              ),
+                              ButtonSegment(
+                                value: AppPalette.monochrome,
+                                label: Text('Monocromática'),
+                              ),
+                            ],
+                            selected: {appearance.palette},
+                            onSelectionChanged: (values) =>
+                                reportPreferenceSave(
+                                  context,
+                                  appearance.setPalette(values.single),
+                                ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Aparência',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          SegmentedButton<Brightness>(
+                            direction: vertical
+                                ? Axis.vertical
+                                : Axis.horizontal,
+                            expandedInsets: vertical ? null : EdgeInsets.zero,
+                            showSelectedIcon: false,
+                            segments: const [
+                              ButtonSegment(
+                                value: Brightness.light,
+                                icon: Icon(Icons.light_mode_outlined),
+                                label: Text('Claro'),
+                              ),
+                              ButtonSegment(
+                                value: Brightness.dark,
+                                icon: Icon(Icons.dark_mode_outlined),
+                                label: Text('Escuro'),
+                              ),
+                            ],
+                            selected: {appearance.brightness},
+                            onSelectionChanged: (values) =>
+                                reportPreferenceSave(
+                                  context,
+                                  appearance.setBrightness(values.single),
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'As cores das tags e dos avisos são preservadas nas duas paletas. Suas escolhas são lembradas neste dispositivo.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Organização',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
                     FloatingCard(
                       child: Column(
                         children: [
@@ -43,10 +120,10 @@ class SettingScreen extends StatelessWidget {
                             subtitle: 'Gerencie tags e seus lembretes',
                             onTap: () => Navigator.pushNamed(context, '/tags'),
                           ),
-                          const Divider(height: 1, indent: 54, endIndent: 16),
+                          const Divider(indent: 16, endIndent: 16),
                           _Tile(
                             icon: Icons.bar_chart_rounded,
-                            label: 'Estatisticas',
+                            label: 'Estatísticas',
                             subtitle: 'Resumo das suas atividades',
                             onTap: () =>
                                 Navigator.pushNamed(context, '/statistics'),
@@ -54,7 +131,6 @@ class SettingScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -68,57 +144,24 @@ class SettingScreen extends StatelessWidget {
 }
 
 class _Tile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final VoidCallback onTap;
-
   const _Tile({
     required this.icon,
     required this.label,
     required this.subtitle,
     required this.onTap,
   });
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE1BEE7),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: const Color(0xFF9C27B0), size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(fontSize: 12, color: Colors.black45),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.black26),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    leading: Icon(icon, color: Theme.of(context).colorScheme.onSurface),
+    title: Text(label, style: Theme.of(context).textTheme.titleMedium),
+    subtitle: Text(subtitle),
+    trailing: const Icon(Icons.chevron_right),
+    onTap: onTap,
+  );
 }
