@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:meu_app/data/models/subject.dart';
 import 'package:meu_app/services/subject_service.dart';
 import 'package:meu_app/shared/widgets/bottom_nav.dart';
-import 'package:meu_app/shared/widgets/floating_card.dart';
+import 'package:meu_app/shared/widgets/form_surface.dart';
+import 'package:meu_app/shared/widgets/action_button.dart';
+import 'package:meu_app/shared/widgets/app_scaffold.dart';
 import 'package:meu_app/shared/widgets/top_bar.dart';
 
 class AddSubjectScreen extends StatefulWidget {
-  const AddSubjectScreen({super.key});
+  const AddSubjectScreen({super.key, this.subjectService});
+  final SubjectService? subjectService;
 
   @override
   State<AddSubjectScreen> createState() => _AddSubjectScreenState();
 }
 
 class _AddSubjectScreenState extends State<AddSubjectScreen> {
-  final _subjectService = SubjectService();
+  late final _subjectService = widget.subjectService ?? SubjectService();
   final _titleController = TextEditingController();
 
   @override
@@ -25,82 +28,54 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
   Future<void> _submit() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe o nome da materia.')),
+        const SnackBar(content: Text('Informe o nome da matéria.')),
       );
       return;
     }
 
-    await _subjectService.create(Subject(title: _titleController.text));
-    if (!mounted) return;
-    Navigator.pop(context, true);
+    try {
+      await _subjectService.create(Subject(title: _titleController.text));
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível salvar a matéria.')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-
-    return Scaffold(
-      backgroundColor: Colors.white,
+    return AppScaffold(
       body: SafeArea(
         child: Column(
           children: [
-            const TopBar(screenName: 'Adicionar Materia'),
+            const TopBar(screenName: 'Adicionar Matéria', showBackButton: true),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(left: 4, bottom: 6),
-                      child: Text(
-                        'Nome da Materia',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                    FloatingCard(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      child: TextField(
+                    FormSection(
+                      title: 'Nova matéria',
+                      subtitle: 'Agrupe suas atividades por disciplina.',
+                      icon: Icons.menu_book_outlined,
+                      child: FormTextField(
+                        label: 'Nome da matéria',
+                        hint: 'Ex.: Matemática',
                         controller: _titleController,
-                        decoration: const InputDecoration(
-                          hintText: 'Ex: Calculo I',
-                          border: InputBorder.none,
-                        ),
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    GestureDetector(
-                      onTap: _submit,
-                      child: Container(
-                        width: double.infinity,
-                        height: w * 0.16,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF9C27B0),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_rounded, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              'Salvar Materia',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    const SizedBox(height: 24),
+                    ActionButton(
+                      label: 'Salvar matéria',
+                      icon: Icons.check_rounded,
+                      onPressed: _submit,
                     ),
                   ],
                 ),

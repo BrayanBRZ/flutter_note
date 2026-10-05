@@ -7,22 +7,31 @@ import 'package:meu_app/data/models/task.dart';
 import 'package:meu_app/services/subject_service.dart';
 import 'package:meu_app/services/tag_service.dart';
 import 'package:meu_app/services/task_service.dart';
-import 'package:meu_app/shared/formatters.dart';
 import 'package:meu_app/shared/widgets/bottom_nav.dart';
-import 'package:meu_app/shared/widgets/floating_card.dart';
+import 'package:meu_app/shared/widgets/task_form.dart';
+import 'package:meu_app/shared/widgets/reminder_fields.dart';
+import 'package:meu_app/shared/widgets/app_scaffold.dart';
 import 'package:meu_app/shared/widgets/top_bar.dart';
 
 class EditTaskScreen extends StatefulWidget {
-  const EditTaskScreen({super.key});
+  const EditTaskScreen({
+    super.key,
+    this.taskService,
+    this.tagService,
+    this.subjectService,
+  });
+  final TaskService? taskService;
+  final TagService? tagService;
+  final SubjectService? subjectService;
 
   @override
   State<EditTaskScreen> createState() => EditTaskScreenState();
 }
 
 class EditTaskScreenState extends State<EditTaskScreen> {
-  final _taskService = TaskService();
-  final _tagService = TagService();
-  final _subjectService = SubjectService();
+  late final _taskService = widget.taskService ?? TaskService();
+  late final _tagService = widget.tagService ?? TagService();
+  late final _subjectService = widget.subjectService ?? SubjectService();
   late TextEditingController _titleController;
   late TextEditingController _descController;
   late Future<_TaskFormData> _future;
@@ -87,12 +96,6 @@ class EditTaskScreenState extends State<EditTaskScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF9C27B0)),
-        ),
-        child: child!,
-      ),
     );
     if (picked != null) setState(() => _selectedDate = picked);
   }
@@ -108,7 +111,7 @@ class EditTaskScreenState extends State<EditTaskScreen> {
   Future<void> _submit() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe o titulo da atividade.')),
+        const SnackBar(content: Text('Informe o título da atividade.')),
       );
       return;
     }
@@ -134,7 +137,7 @@ class EditTaskScreenState extends State<EditTaskScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nao foi possivel salvar a atividade.')),
+        const SnackBar(content: Text('Não foi possível salvar a atividade.')),
       );
     }
   }
@@ -142,7 +145,13 @@ class EditTaskScreenState extends State<EditTaskScreen> {
   Reminder _buildReminder() {
     return Reminder(
       regularity: _reminderRegularity,
-      regularTime: DateTime(1970, 1, 1, _reminderTime.hour, _reminderTime.minute),
+      regularTime: DateTime(
+        1970,
+        1,
+        1,
+        _reminderTime.hour,
+        _reminderTime.minute,
+      ),
       remindBefore: Duration(minutes: _remindBeforeMinutes),
       isActive: _reminderActive,
     );
@@ -150,12 +159,11 @@ class EditTaskScreenState extends State<EditTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    return AppScaffold(
       body: SafeArea(
         child: Column(
           children: [
-            const TopBar(screenName: 'Editar Atividade'),
+            const TopBar(screenName: 'Editar Atividade', showBackButton: true),
             Expanded(
               child: FutureBuilder<_TaskFormData>(
                 future: _future,
@@ -165,7 +173,7 @@ class EditTaskScreenState extends State<EditTaskScreen> {
                   }
                   if (snapshot.hasError) {
                     return const Center(
-                      child: Text('Nao foi possivel carregar o formulario.'),
+                      child: Text('Não foi possível carregar o formulário.'),
                     );
                   }
                   return _buildForm(snapshot.data ?? _TaskFormData.empty());
@@ -179,254 +187,43 @@ class EditTaskScreenState extends State<EditTaskScreen> {
     );
   }
 
-  Widget _buildForm(_TaskFormData data) {
-    final w = MediaQuery.of(context).size.width;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _label('Titulo'),
-          _textField(_titleController, 'Titulo'),
-          const SizedBox(height: 16),
-          _label('Descricao'),
-          _textField(_descController, 'Descricao', maxLines: 3),
-          const SizedBox(height: 16),
-          _label('Data'),
-          _pickerCard(formatDate(_selectedDate), Icons.calendar_month_outlined, _pickDate),
-          const SizedBox(height: 16),
-          _label('Regularidade'),
-          _regularityDropdown(_regularity, (value) {
-            if (value != null) setState(() => _regularity = value);
-          }),
-          const SizedBox(height: 16),
-          _label('Tag'),
-          _tagDropdown(data.tags),
-          const SizedBox(height: 16),
-          _label('Materia'),
-          _subjectDropdown(data.subjects),
-          const SizedBox(height: 16),
-          _reminderSection(),
-          const SizedBox(height: 32),
-          GestureDetector(
-            onTap: _submit,
-            child: Container(
-              width: double.infinity,
-              height: w * 0.16,
-              decoration: BoxDecoration(
-                color: const Color(0xFF9C27B0),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_rounded, color: Colors.white, size: 22),
-                  SizedBox(width: 8),
-                  Text(
-                    'Salvar Alteracoes',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _label(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 6),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
-          color: Colors.black54,
-        ),
-      ),
-    );
-  }
-
-  Widget _textField(
-    TextEditingController controller,
-    String hint, {
-    int maxLines = 1,
-  }) {
-    return FloatingCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(hintText: hint, border: InputBorder.none),
-      ),
-    );
-  }
-
-  Widget _pickerCard(String label, IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: FloatingCard(
-        height: MediaQuery.of(context).size.width * 0.16,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-            Icon(icon, color: const Color(0xFF9C27B0)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _regularityDropdown(
-    Regularity value,
-    ValueChanged<Regularity?> onChanged,
-  ) {
-    return FloatingCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<Regularity>(
-          value: value,
-          isExpanded: true,
-          items: Regularity.values
-              .map(
-                (regularity) => DropdownMenuItem(
-                  value: regularity,
-                  child: Text(regularityLabel(regularity)),
-                ),
-              )
-              .toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-
-  Widget _tagDropdown(List<Tag> tags) {
-    return FloatingCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          value: tags.any((tag) => tag.id == _selectedTagId)
-              ? _selectedTagId
-              : null,
-          isExpanded: true,
-          items: tags
-              .map(
-                (tag) => DropdownMenuItem<int>(
-                  value: tag.id,
-                  child: Text(tag.title),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value != null) setState(() => _selectedTagId = value);
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _subjectDropdown(List<Subject> subjects) {
-    return FloatingCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int?>(
-          value: _selectedSubjectId,
-          isExpanded: true,
-          items: [
-            const DropdownMenuItem<int?>(
-              value: null,
-              child: Text('Sem materia'),
-            ),
-            ...subjects.map(
-              (subject) => DropdownMenuItem<int?>(
-                value: subject.id,
-                child: Text(subject.title),
-              ),
-            ),
-          ],
-          onChanged: (value) => setState(() => _selectedSubjectId = value),
-        ),
-      ),
-    );
-  }
-
-  Widget _reminderSection() {
-    return FloatingCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Column(
-        children: [
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Lembrete personalizado'),
-            value: _useCustomReminder,
-            onChanged: (value) => setState(() => _useCustomReminder = value),
-          ),
-          if (_useCustomReminder) ...[
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Ativo'),
-              value: _reminderActive,
-              onChanged: (value) => setState(() => _reminderActive = value),
-            ),
-            DropdownButtonHideUnderline(
-              child: DropdownButton<Regularity>(
-                value: _reminderRegularity,
-                isExpanded: true,
-                items: Regularity.values
-                    .map(
-                      (regularity) => DropdownMenuItem(
-                        value: regularity,
-                        child: Text(regularityLabel(regularity)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _reminderRegularity = value);
-                  }
-                },
-              ),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Horario'),
-              trailing: Text(_reminderTime.format(context)),
-              onTap: _pickReminderTime,
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: _remindBeforeMinutes,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(value: 10, child: Text('10 min antes')),
-                  DropdownMenuItem(value: 30, child: Text('30 min antes')),
-                  DropdownMenuItem(value: 60, child: Text('1 hora antes')),
-                  DropdownMenuItem(value: 1440, child: Text('1 dia antes')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _remindBeforeMinutes = value);
-                  }
-                },
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  Widget _buildForm(_TaskFormData data) => TaskForm(
+    titleController: _titleController,
+    descriptionController: _descController,
+    date: _selectedDate,
+    regularity: _regularity,
+    tags: data.tags,
+    subjects: data.subjects,
+    tagId: _selectedTagId,
+    subjectId: _selectedSubjectId,
+    onDateTap: _pickDate,
+    onRegularityChanged: (value) {
+      if (value != null) setState(() => _regularity = value);
+    },
+    onTagChanged: (value) {
+      if (value != null) setState(() => _selectedTagId = value);
+    },
+    onSubjectChanged: (value) => setState(() => _selectedSubjectId = value),
+    customReminder: _useCustomReminder,
+    onCustomReminderChanged: (value) =>
+        setState(() => _useCustomReminder = value),
+    reminderFields: ReminderFields(
+      active: _reminderActive,
+      regularity: _reminderRegularity,
+      time: _reminderTime,
+      beforeMinutes: _remindBeforeMinutes,
+      onActiveChanged: (value) => setState(() => _reminderActive = value),
+      onRegularityChanged: (value) {
+        if (value != null) setState(() => _reminderRegularity = value);
+      },
+      onTimeTap: _pickReminderTime,
+      onBeforeChanged: (value) {
+        if (value != null) setState(() => _remindBeforeMinutes = value);
+      },
+    ),
+    saveLabel: 'Salvar alterações',
+    onSave: _submit,
+  );
 }
 
 class _TaskFormData {
